@@ -3,9 +3,17 @@ const GRID_SIZE = 30;
 const CELL_SIZE = 20;
 const KILLER_SPEED = 0.5; // 杀手移动速度
 const ESCAPE_GAP = 5; // 逃生区域数量
+const RAIDER_SPAWN_SCORE = 150; // 掠夺者生成分数
+const RAIDER_LENGTH = 5; // 掠夺者初始长度
+const RAIDER_SPEED = 0.8; // 掠夺者移动速度
 
-// 杀手状态
+// 游戏角色状态
 let killers = [];
+let raiderSnake = {
+    body: [],
+    direction: 'right',
+    alive: false
+};
 let lastTriggerScore = -100; // 上次触发时的分数
 
 // 游戏状态
@@ -59,6 +67,7 @@ function startGame() {
     score = 0;
     consecutiveFood = 0;
     specialFoods = [];
+    killers = [];
     isSpecialPhase = false;
     normalFoodCounter = 0;
     updateScore();
@@ -146,6 +155,14 @@ function draw() {
         );
     });
 
+    // 画掠夺者蛇
+    if (raiderSnake.alive) {
+        raiderSnake.body.forEach((segment, index) => {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(segment.x * CELL_SIZE, segment.y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+        });
+    }
+
     // 画蛇
     snake.forEach((segment, index) => {
         ctx.fillStyle = index === 0 ? '#4CAF50' : '#2E7D32';
@@ -225,6 +242,7 @@ function handleSpecialFoodCollision(head) {
 }
 
 function generateKillerWave() {
+    lastTriggerScore = score; // 同步触发分数
     // 生成逃生缺口位置
     const escapePositions = [];
     while (escapePositions.length < ESCAPE_GAP) {
@@ -279,6 +297,11 @@ function generateFood() {
 function updateScore() {
     document.getElementById('score').textContent = score;
 
+    // 生成掠夺者蛇
+    if (score >= RAIDER_SPAWN_SCORE && !raiderSnake.alive) {
+        generateRaider();
+    }
+
     // 生成杀手障碍物（每100分触发一次）
     if (score > 0 && score % 100 === 0 && score !== lastTriggerScore) {
         lastTriggerScore = score;
@@ -299,3 +322,28 @@ function gameOver() {
 
 // 初始化显示最高分
 document.getElementById('high-score').textContent = highScore;
+
+
+function generateRaider() {
+    // 生成初始位置并校验
+    let startX, startY;
+    do {
+        startX = Math.floor(Math.random() * (GRID_SIZE - RAIDER_LENGTH));
+        startY = Math.floor(Math.random() * GRID_SIZE);
+    } while (snake.some(segment =>
+            segment.x >= startX && segment.x < startX + RAIDER_LENGTH &&
+            segment.y === startY
+        ));
+
+    // 初始化掠夺者蛇
+    raiderSnake = {
+        body: Array.from({
+            length: RAIDER_LENGTH
+        }, (_, i) => ({
+            x: startX + i,
+            y: startY
+        })),
+        direction: Math.random() > 0.5 ? 'right' : 'left',
+        alive: true
+    };
+}
