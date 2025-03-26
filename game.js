@@ -3,7 +3,7 @@ const GRID_SIZE = 30;
 const CELL_SIZE = 20;
 // 杀手移动速度已整合到难度参数中
 // 逃生区域数量由难度参数动态控制
-const RAIDER_SPAWN_SCORE = 150; // 掠夺者生成分数
+const RAIDER_SPAWN_SCORE = 30; // 掠夺者生成分数
 const RAIDER_LENGTH = 5; // 掠夺者初始长度
 const RAIDER_SPEED = 0.8; // 掠夺者移动速度
 
@@ -109,7 +109,7 @@ function setDifficulty(difficulty, button) {
     document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
     button.classList.add('active');
     const difficultyDisplay = document.querySelector('.current-difficulty');
-    difficultyDisplay.textContent = `${button.textContent}已激活`;
+    difficultyDisplay.querySelector('.difficulty-text').textContent = `${button.textContent}已激活`;
     difficultyDisplay.classList.add('show');
     currentDifficulty = difficulty;
     if (gameLoop) {
@@ -154,9 +154,92 @@ function update() {
         Math.floor(k.x) === head.x &&
         Math.floor(k.y) === head.y
     );
+    // 在update函数头部添加掠夺者移动逻辑
+    if (raiderSnake.alive) {
+        const raiderHead = {
+            ...raiderSnake.body[0]
+        };
+
+        // 智能寻食逻辑
+        const targetFood = food;
+        const dx = targetFood.x - raiderHead.x;
+        const dy = targetFood.y - raiderHead.y;
+
+        // 计算优先移动方向
+        let preferredDirections = [];
+        if (Math.abs(dx) > Math.abs(dy)) {
+            preferredDirections.push(dx > 0 ? 'right' : 'left');
+            preferredDirections.push(dy > 0 ? 'down' : 'up');
+        } else {
+            preferredDirections.push(dy > 0 ? 'down' : 'up');
+            preferredDirections.push(dx > 0 ? 'right' : 'left');
+        }
+
+        // 筛选有效方向
+        const validDirections = preferredDirections.filter(d => {
+            if (d === 'up' && raiderHead.y <= 0) return false;
+            if (d === 'down' && raiderHead.y >= GRID_SIZE - 1) return false;
+            if (d === 'left' && raiderHead.x <= 0) return false;
+            if (d === 'right' && raiderHead.x >= GRID_SIZE - 1) return false;
+            return d !== getOppositeDirection(raiderSnake.direction);
+        });
+
+        if (validDirections.length > 0) {
+            raiderSnake.direction = validDirections[0];
+        } else {
+            // 备用随机转向逻辑
+            if (Math.random() < 0.3) {
+                const directions = ['up', 'down', 'left', 'right'].filter(d =>
+                    d !== getOppositeDirection(raiderSnake.direction)
+                );
+                if (directions.length > 0) {
+                    raiderSnake.direction = directions[Math.floor(Math.random() * directions.length)];
+                }
+            }
+        }
+
+        // 根据方向移动
+        switch (raiderSnake.direction) {
+            case 'up':
+                raiderHead.y -= RAIDER_SPEED;
+                break;
+            case 'down':
+                raiderHead.y += RAIDER_SPEED;
+                break;
+            case 'left':
+                raiderHead.x -= RAIDER_SPEED;
+                break;
+            case 'right':
+                raiderHead.x += RAIDER_SPEED;
+                break;
+        }
+
+        // 边界碰撞检测
+        if (raiderHead.x < 0 || raiderHead.x >= GRID_SIZE || raiderHead.y < 0 || raiderHead.y >= GRID_SIZE) {
+            raiderSnake.alive = false;
+        } else {
+            // 更新掠夺者蛇身体位置
+            raiderSnake.body.unshift(raiderHead);
+            raiderSnake.body.pop();
+        }
+    }
+
+    // 在碰撞检测部分添加掠夺者蛇碰撞判断
+    // 掠夺者吃食物检测
+    const raiderAteFood = raiderSnake.alive && raiderSnake.body.some(segment =>
+        Math.floor(segment.x) === food.x &&
+        Math.floor(segment.y) === food.y
+    );
+
+    // 掠夺者与玩家碰撞检测
+    const raiderCollision = raiderSnake.alive && raiderSnake.body.some(segment =>
+        Math.floor(segment.x) === head.x &&
+        Math.floor(segment.y) === head.y
+    );
+
     if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE ||
         snake.some(segment => segment.x === head.x && segment.y === head.y) ||
-        killerCollision) {
+        killerCollision || raiderCollision || raiderAteFood) {
         gameOver();
         return;
     }
@@ -165,7 +248,7 @@ function update() {
 
     // 吃食物检测
     if (head.x === food.x && head.y === food.y) {
-        handleFoodConsumption();
+        handleFoodConsumption(raiderAteFood);
         food = generateFood();
     } else if (checkSpecialFoodCollision(head)) {
         handleSpecialFoodCollision(head);
@@ -236,9 +319,19 @@ function draw() {
     });
 }
 
-function handleFoodConsumption() {
-    score += 10;
-    consecutiveFood++;
+function handleFoodConsumption(raiderAteFood) {
+    if (raiderAteFood) {
+        raiderSnake.body.push({
+            ...raiderSnake.body[raiderSnake.body.length - 1]
+        });
+        score += 50; // 掠夺者吃食物得分更高
+    } else {
+        snake.push({
+            ...snake[snake.length - 1]
+        });
+        score += 10;
+        consecutiveFood++;
+    }
     updateScore();
 
     if (isSpecialPhase) {
@@ -249,6 +342,14 @@ function handleFoodConsumption() {
             consecutiveFood = 0;
             normalFoodCounter = 0;
         }
+    }
+
+    // 处理掠夺者吃食物
+    if (raiderAteFood) {
+        food = generateFood();
+        raiderSnake.alive = false;
+        score += 20; // 奖励玩家
+        updateScore();
     }
 }
 
@@ -394,4 +495,18 @@ function generateRaider() {
         direction: Math.random() > 0.5 ? 'right' : 'left',
         alive: true
     };
+}
+
+
+function getOppositeDirection(dir) {
+    switch (dir) {
+        case 'up':
+            return 'down';
+        case 'down':
+            return 'up';
+        case 'left':
+            return 'right';
+        case 'right':
+            return 'left';
+    }
 }

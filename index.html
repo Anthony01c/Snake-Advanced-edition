@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>贪吃蛇游戏</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
   </head>
   <body>
     <div class="difficulty-container" id="difficulty-buttons">
@@ -33,7 +37,11 @@
         <span>最高分：<span id="high-score">0</span></span>
       </div>
 
-      <div class="current-difficulty"></div>
+      <div class="current-difficulty">
+        <i class="fas fa-star blinking-icon"></i>
+        <i class="fas fa-arrow-alt-circle-right spinning-icon"></i>
+        <span class="difficulty-text">当前难度</span>
+      </div>
 
       <canvas id="gameCanvas" width="600" height="600"></canvas>
       <div class="game-over" id="gameOver">
