@@ -105,7 +105,12 @@ function startGame() {
 }
 
 // 添加难度切换函数
-function setDifficulty(difficulty) {
+function setDifficulty(difficulty, button) {
+    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
+    const difficultyDisplay = document.querySelector('.current-difficulty');
+    difficultyDisplay.textContent = `${button.textContent}已激活`;
+    difficultyDisplay.classList.add('show');
     currentDifficulty = difficulty;
     if (gameLoop) {
         clearInterval(gameLoop);

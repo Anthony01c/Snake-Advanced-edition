@@ -7,22 +7,33 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div class="difficulty-container" id="difficulty-buttons">
+      <button
+        class="difficulty-btn"
+        onclick="setDifficulty(DIFFICULTY_LEVELS.EASY, this)"
+      >
+        简单模式
+      </button>
+      <button
+        class="difficulty-btn"
+        onclick="setDifficulty(DIFFICULTY_LEVELS.NORMAL, this)"
+      >
+        普通模式
+      </button>
+      <button
+        class="difficulty-btn"
+        onclick="setDifficulty(DIFFICULTY_LEVELS.HARD, this)"
+      >
+        困难模式
+      </button>
+    </div>
     <div class="game-container">
       <div class="score-board">
         <span>当前分数：<span id="score">0</span></span>
         <span>最高分：<span id="high-score">0</span></span>
       </div>
-      <div id="difficulty-buttons">
-        <button onclick="setDifficulty(DIFFICULTY_LEVELS.EASY)">
-          简单模式
-        </button>
-        <button onclick="setDifficulty(DIFFICULTY_LEVELS.NORMAL)">
-          普通模式
-        </button>
-        <button onclick="setDifficulty(DIFFICULTY_LEVELS.HARD)">
-          困难模式
-        </button>
-      </div>
+
+      <div class="current-difficulty"></div>
 
       <canvas id="gameCanvas" width="600" height="600"></canvas>
       <div class="game-over" id="gameOver">
