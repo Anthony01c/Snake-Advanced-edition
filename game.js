@@ -36,6 +36,20 @@ let isSpecialPhase = false; // 特殊状态标志
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// 处理背景图片上传
+document.getElementById('bg-upload').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            document.body.style.backgroundImage = `url(${event.target.result})`;
+            document.body.style.backgroundSize = 'cover';
+            document.body.style.backgroundPosition = 'center';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
 // 键盘控制
 document.addEventListener('keydown', (e) => {
     switch (e.key) {

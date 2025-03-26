@@ -31,6 +31,14 @@
         困难模式
       </button>
     </div>
+    <input type="file" id="bg-upload" accept="image/*" hidden />
+    <button
+      class="background-upload-btn"
+      onclick="document.getElementById('bg-upload').click()"
+    >
+      <i class="fas fa-image"></i> 上传背景图
+    </button>
+
     <div class="game-container">
       <div class="score-board">
         <span>当前分数：<span id="score">0</span></span>
