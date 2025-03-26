@@ -68,6 +68,10 @@ document.addEventListener('keydown', (e) => {
             break;
         case ' ':
             if (!gameLoop) {
+                if (!difficultySelected) {
+                    showDifficultyAlert();
+                    return;
+                }
                 startGame();
                 e.preventDefault();
             } else {
@@ -76,6 +80,16 @@ document.addEventListener('keydown', (e) => {
             }
     }
 });
+
+let difficultySelected = false;
+
+function showDifficultyAlert() {
+    const alert = document.getElementById('difficulty-alert');
+    alert.style.display = 'block';
+    setTimeout(() => {
+        alert.style.display = 'none';
+    }, 2000);
+}
 
 // 难度配置
 const DIFFICULTY_LEVELS = {
@@ -127,11 +141,11 @@ function setDifficulty(difficulty, button) {
     difficultyDisplay.querySelector('.difficulty-text').textContent = `${button.textContent}已激活`;
     difficultyDisplay.classList.add('show');
     currentDifficulty = difficulty;
+    difficultySelected = true;
     if (gameLoop) {
         clearInterval(gameLoop);
         gameLoop = setInterval(update, currentDifficulty.speed);
     }
-
 }
 
 function update() {
