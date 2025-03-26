@@ -12,7 +12,8 @@ let killers = [];
 let raiderSnake = {
     body: [],
     direction: 'right',
-    alive: false
+    alive: false,
+    eatCount: 0
 };
 let lastTriggerScore = -100; // 上次触发时的分数
 
@@ -169,8 +170,12 @@ function update() {
         Math.floor(k.y) === head.y
     );
     // 在update函数头部添加掠夺者移动逻辑
+    let raiderHead = {
+        x: 0,
+        y: 0
+    };
     if (raiderSnake.alive) {
-        const raiderHead = {
+        raiderHead = {
             ...raiderSnake.body[0]
         };
 
@@ -239,11 +244,10 @@ function update() {
     }
 
     // 在碰撞检测部分添加掠夺者蛇碰撞判断
-    // 掠夺者吃食物检测
-    const raiderAteFood = raiderSnake.alive && raiderSnake.body.some(segment =>
-        Math.floor(segment.x) === food.x &&
-        Math.floor(segment.y) === food.y
-    );
+    // 精准掠夺者蛇头碰撞检测
+    const raiderAteFood = raiderSnake.alive &&
+        Math.abs(raiderSnake.body[0].x - food.x) < 0.5 &&
+        Math.abs(raiderSnake.body[0].y - food.y) < 0.5;
 
     // 掠夺者与玩家碰撞检测
     const raiderCollision = raiderSnake.alive && raiderSnake.body.some(segment =>
@@ -253,7 +257,7 @@ function update() {
 
     if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE ||
         snake.some(segment => segment.x === head.x && segment.y === head.y) ||
-        killerCollision || raiderCollision || raiderAteFood) {
+        killerCollision || raiderCollision) {
         gameOver();
         return;
     }
@@ -261,11 +265,21 @@ function update() {
     snake.unshift(head);
 
     // 吃食物检测
-    if (head.x === food.x && head.y === food.y) {
-        handleFoodConsumption(raiderAteFood);
+    // 分离玩家和掠夺者的食物检测
+    const playerAteFood = head.x === food.x && head.y === food.y;
+    const specialCollision = checkSpecialFoodCollision(head);
+
+    if (raiderAteFood) {
+        handleFoodConsumption(true);
         food = generateFood();
-    } else if (checkSpecialFoodCollision(head)) {
-        handleSpecialFoodCollision(head);
+    } else if (playerAteFood || specialCollision) {
+        if (playerAteFood) {
+            handleFoodConsumption(false);
+            food = generateFood();
+        }
+        if (specialCollision) {
+            handleSpecialFoodCollision(head);
+        }
     } else {
         snake.pop();
     }
@@ -318,11 +332,13 @@ function draw() {
         ctx.fillText('游戏暂停', canvas.width / 2, canvas.height / 2 - 30);
     }
 
-    // 画普通食物
-    ctx.fillStyle = '#ff0000';
-    ctx.beginPath();
-    ctx.arc(food.x * CELL_SIZE + CELL_SIZE / 2, food.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 1, 0, Math.PI * 2);
-    ctx.fill();
+    // 画普通食物（仅在未被掠夺者吃掉时）
+    if (!raiderSnake.body.some(segment => Math.floor(segment.x) === food.x && Math.floor(segment.y) === food.y)) {
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(food.x * CELL_SIZE + CELL_SIZE / 2, food.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 2 - 1, 0, Math.PI * 2);
+        ctx.fill();
+    }
 
     // 画特殊食物
     specialFoods.forEach(food => {
@@ -335,11 +351,25 @@ function draw() {
 
 function handleFoodConsumption(raiderAteFood) {
     if (raiderAteFood) {
-        raiderSnake.body.push({
-            ...raiderSnake.body[raiderSnake.body.length - 1]
-        });
-        score += 50; // 掠夺者吃食物得分更高
+        // 掠夺者吃食物逻辑
+        raiderSnake.eatCount++;
+        if (raiderSnake.eatCount >= 3) {
+            gameOver();
+            return;
+        }
+        score -= 50;
+        // 重置掠夺者状态并立即生成新食物
+        raiderSnake.body = [];
+        raiderSnake.alive = false;
+        const oldFood = food;
+        food = generateFood();
+        // 确保新食物不与掠夺者旧位置重叠
+        while (checkPositionConflict(food, oldFood)) {
+            food = generateFood();
+        }
+        console.log('[掠夺者进食] 新食物坐标:', food);
     } else {
+        // 玩家吃食物逻辑
         snake.push({
             ...snake[snake.length - 1]
         });
@@ -357,14 +387,6 @@ function handleFoodConsumption(raiderAteFood) {
             normalFoodCounter = 0;
         }
     }
-
-    // 处理掠夺者吃食物
-    if (raiderAteFood) {
-        food = generateFood();
-        raiderSnake.alive = false;
-        score += 20; // 奖励玩家
-        updateScore();
-    }
 }
 
 function checkSpecialFoodCollision(head) {
@@ -378,12 +400,23 @@ function handleSpecialFoodCollision(head) {
     // 生成两个新特殊食物（带位置校验）
     for (let i = 0; i < 2; i++) {
         let newFood;
+        let attempts = 0;
+        const maxAttempts = 100;
         do {
             newFood = {
                 x: Math.floor(Math.random() * GRID_SIZE),
                 y: Math.floor(Math.random() * GRID_SIZE),
                 type: 'SPECIAL'
             };
+            attempts++;
+            if (attempts > maxAttempts) {
+                newFood = {
+                    x: 0,
+                    y: 0,
+                    type: 'SPECIAL'
+                };
+                break;
+            }
         } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
 
         specialFoods.push(newFood);
@@ -451,7 +484,39 @@ function generateFood() {
             y: Math.floor(Math.random() * GRID_SIZE),
             type: 'NORMAL'
         };
-        if (!snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)) {
+        // 增加对掠夺者位置的校验
+        // 使用近似匹配解决浮点坐标问题
+        const isValidPosition = !snake.some(s => s.x === newFood.x && s.y === newFood.y) &&
+            (!raiderSnake.body.length || !raiderSnake.body.some(segment => {
+                const dx = Math.abs(segment.x - newFood.x);
+                const dy = Math.abs(segment.y - newFood.y);
+                console.log('[坐标校验] 食物:%o 掠夺者段: %o 差值: dx=%.2f dy=%.2f',
+                    newFood, {
+                        x: segment.x.toFixed(2),
+                        y: segment.y.toFixed(2)
+                    },
+                    dx, dy);
+                return dx < 1.5 && dy < 1.5;
+            }));
+
+        // 添加调试日志
+        console.log('尝试生成食物坐标:', newFood);
+        console.log('掠夺者位置:', raiderSnake.body.map(s => ({
+            x: s.x.toFixed(1),
+            y: s.y.toFixed(1)
+        })));
+
+        // 添加最大尝试次数保护
+        const MAX_ATTEMPTS = 200;
+        let attemptCount = 0;
+
+        if (isValidPosition) {
+            console.log('生成食物成功:', newFood);
+            return newFood;
+        }
+        attemptCount++;
+        if (attemptCount >= MAX_ATTEMPTS) {
+            console.error('达到最大尝试次数，强制生成食物');
             return newFood;
         }
     }
@@ -488,6 +553,7 @@ document.getElementById('high-score').textContent = highScore;
 
 
 function generateRaider() {
+    raiderSnake.eatCount = 0;
     // 生成初始位置并校验
     let startX, startY;
     do {
@@ -511,6 +577,12 @@ function generateRaider() {
     };
 }
 
+
+function checkPositionConflict(newPos, oldPos) {
+    const dx = Math.abs(newPos.x - oldPos.x);
+    const dy = Math.abs(newPos.y - oldPos.y);
+    return dx < 1.5 && dy < 1.5;
+}
 
 function getOppositeDirection(dir) {
     switch (dir) {
