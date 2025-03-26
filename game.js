@@ -1,8 +1,8 @@
 // 游戏基本参数
 const GRID_SIZE = 30;
 const CELL_SIZE = 20;
-const KILLER_SPEED = 0.5; // 杀手移动速度
-const ESCAPE_GAP = 5; // 逃生区域数量
+// 杀手移动速度已整合到难度参数中
+// 逃生区域数量由难度参数动态控制
 const RAIDER_SPAWN_SCORE = 150; // 掠夺者生成分数
 const RAIDER_LENGTH = 5; // 掠夺者初始长度
 const RAIDER_SPEED = 0.8; // 掠夺者移动速度
@@ -62,6 +62,24 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// 难度配置
+const DIFFICULTY_LEVELS = {
+    EASY: {
+        speed: 150,
+        killerSpeed: 0.3
+    },
+    NORMAL: {
+        speed: 100,
+        killerSpeed: 0.5
+    },
+    HARD: {
+        speed: 70,
+        killerSpeed: 0.8
+    }
+};
+
+let currentDifficulty = DIFFICULTY_LEVELS.NORMAL;
+
 // 游戏主循环
 function startGame() {
     score = 0;
@@ -80,7 +98,17 @@ function startGame() {
     food = generateFood();
 
     if (gameLoop) clearInterval(gameLoop);
-    gameLoop = setInterval(update, 100);
+    gameLoop = setInterval(update, currentDifficulty.speed);
+}
+
+// 添加难度切换函数
+function setDifficulty(difficulty) {
+    currentDifficulty = difficulty;
+    if (gameLoop) {
+        clearInterval(gameLoop);
+        gameLoop = setInterval(update, currentDifficulty.speed);
+    }
+
 }
 
 function update() {
@@ -88,7 +116,7 @@ function update() {
 
     // 移动杀手
     killers.forEach(killer => {
-        killer.y += KILLER_SPEED;
+        killer.y += currentDifficulty.killerSpeed;
         if (killer.y >= GRID_SIZE) {
             killers = killers.filter(k => k !== killer);
         }
@@ -245,10 +273,22 @@ function generateKillerWave() {
     lastTriggerScore = score; // 同步触发分数
     // 生成逃生缺口位置
     const escapePositions = [];
-    while (escapePositions.length < ESCAPE_GAP) {
+    let attempts = 0;
+    const MAX_ATTEMPTS = 100;
+
+    while (escapePositions.length < currentDifficulty.escapeGap && attempts < MAX_ATTEMPTS) {
         const pos = Math.floor(Math.random() * (GRID_SIZE - 4));
         if (!escapePositions.some(p => Math.abs(p - pos) < 5)) {
             escapePositions.push(pos);
+        }
+        attempts++;
+    }
+
+    // 安全回退机制
+    if (escapePositions.length < currentDifficulty.escapeGap) {
+        escapePositions.length = 0;
+        for (let i = 0; i < ESCAPE_GAP; i++) {
+            escapePositions.push(i * Math.floor(GRID_SIZE / ESCAPE_GAP));
         }
     }
 
