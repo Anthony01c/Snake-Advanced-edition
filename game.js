@@ -66,15 +66,18 @@ document.addEventListener('keydown', (e) => {
 const DIFFICULTY_LEVELS = {
     EASY: {
         speed: 150,
-        killerSpeed: 0.3
+        killerSpeed: 0.3,
+        escapeGap: 5
     },
     NORMAL: {
         speed: 100,
-        killerSpeed: 0.5
+        killerSpeed: 0.5,
+        escapeGap: 4
     },
     HARD: {
         speed: 70,
-        killerSpeed: 0.8
+        killerSpeed: 0.8,
+        escapeGap: 3
     }
 };
 
@@ -287,7 +290,7 @@ function generateKillerWave() {
     // 安全回退机制
     if (escapePositions.length < currentDifficulty.escapeGap) {
         escapePositions.length = 0;
-        for (let i = 0; i < ESCAPE_GAP; i++) {
+        for (let i = 0; i < currentDifficulty.escapeGap; i++) {
             escapePositions.push(i * Math.floor(GRID_SIZE / ESCAPE_GAP));
         }
     }
@@ -305,7 +308,7 @@ function generateKillerWave() {
             killers.push({
                 x: x,
                 y: -1, // 从顶部开始下落
-                speed: KILLER_SPEED
+                speed: currentDifficulty.killerSpeed
             });
         }
     }
