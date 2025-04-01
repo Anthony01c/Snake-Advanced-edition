@@ -37,15 +37,66 @@ let isSpecialPhase = false; // 特殊状态标志
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// 加载本地存储的背景图
+window.addEventListener('DOMContentLoaded', () => {
+    const bgImage = localStorage.getItem('snakeBackground');
+    if (bgImage) {
+        document.body.style.backgroundImage = `url(${bgImage})`;
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundSize = '100% 100%';
+        document.body.style.backgroundPosition = 'center';
+    }
+});
+
+// 关闭页面时清除存储
+// 移除会清除背景图的卸载事件处理
+// window.addEventListener('beforeunload', () => {
+//     localStorage.removeItem('snakeBackground');
+// });
+
 // 处理背景图片上传
 document.getElementById('bg-upload').addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function (event) {
-            document.body.style.backgroundImage = `url(${event.target.result})`;
-            document.body.style.backgroundSize = 'cover';
-            document.body.style.backgroundPosition = 'center';
+            const img = new Image();
+            img.onload = function () {
+                // 创建压缩画布
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_SIZE = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height && width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                } else if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                try {
+                    // 清理旧存储
+                    localStorage.removeItem('snakeBackground');
+                    const compressedImage = canvas.toDataURL('image/jpeg', 0.7);
+                    localStorage.setItem('snakeBackground', compressedImage);
+                    document.body.style.backgroundImage = `url(${compressedImage})`;
+                    document.body.style.backgroundRepeat = 'no-repeat';
+                    document.body.style.backgroundSize = '100% 100%';
+                    document.body.style.backgroundPosition = 'center';
+                } catch (e) {
+                    console.error('存储失败:', e);
+                    alert('存储空间不足，请清理浏览器数据后重试！');
+                    localStorage.removeItem('snakeBackground');
+                }
+            };
+            img.src = event.target.result;
         };
         reader.readAsDataURL(file);
     }

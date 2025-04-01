@@ -11,51 +11,55 @@
     />
   </head>
   <body>
-    <div class="difficulty-container" id="difficulty-buttons">
-      <button
-        class="difficulty-btn"
-        onclick="setDifficulty(DIFFICULTY_LEVELS.EASY, this)"
-      >
-        简单模式
-      </button>
-      <button
-        class="difficulty-btn"
-        onclick="setDifficulty(DIFFICULTY_LEVELS.NORMAL, this)"
-      >
-        普通模式
-      </button>
-      <button
-        class="difficulty-btn"
-        onclick="setDifficulty(DIFFICULTY_LEVELS.HARD, this)"
-      >
-        困难模式
-      </button>
-    </div>
-    <input type="file" id="bg-upload" accept="image/*" hidden />
-    <button
-      class="background-upload-btn"
-      onclick="document.getElementById('bg-upload').click()"
-    >
-      <i class="fas fa-image"></i> 上传背景图
-    </button>
-
-    <div class="game-container">
-      <div id="difficulty-alert" class="game-over">请先选择游戏难度！</div>
-      <div class="score-board">
-        <span>当前分数：<span id="score">0</span></span>
-        <span>最高分：<span id="high-score">0</span></span>
+    <div id="game-view">
+      <div class="game-header">
+        <input type="file" id="bg-upload" accept="image/*" hidden />
+        <button
+          class="background-upload-btn"
+          onclick="document.getElementById('bg-upload').click()"
+        >
+          <i class="fas fa-image"></i> 上传背景图
+        </button>
+        <div class="difficulty-container" id="difficulty-buttons">
+          <button
+            class="difficulty-btn"
+            onclick="setDifficulty(DIFFICULTY_LEVELS.EASY, this)"
+          >
+            简单模式
+          </button>
+          <button
+            class="difficulty-btn"
+            onclick="setDifficulty(DIFFICULTY_LEVELS.NORMAL, this)"
+          >
+            普通模式
+          </button>
+          <button
+            class="difficulty-btn"
+            onclick="setDifficulty(DIFFICULTY_LEVELS.HARD, this)"
+          >
+            困难模式
+          </button>
+        </div>
       </div>
 
-      <div class="current-difficulty">
-        <i class="fas fa-star blinking-icon"></i>
-        <i class="fas fa-arrow-alt-circle-right spinning-icon"></i>
-        <span class="difficulty-text">当前难度</span>
-      </div>
+      <div class="game-container">
+        <div id="difficulty-alert" class="game-over">请先选择游戏难度！</div>
+        <div class="score-board">
+          <span>当前分数：<span id="score">0</span></span>
+          <span>最高分：<span id="high-score">0</span></span>
+        </div>
 
-      <canvas id="gameCanvas" width="600" height="600"></canvas>
-      <div class="game-over" id="gameOver">
-        <h2>游戏结束！</h2>
-        <p>按空格键重新开始</p>
+        <div class="current-difficulty">
+          <i class="fas fa-star blinking-icon"></i>
+          <i class="fas fa-arrow-alt-circle-right spinning-icon"></i>
+          <span class="difficulty-text">当前难度</span>
+        </div>
+
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+        <div class="game-over" id="gameOver">
+          <h2>游戏结束！</h2>
+          <p>按空格键重新开始</p>
+        </div>
       </div>
     </div>
     <script src="game.js"></script>
